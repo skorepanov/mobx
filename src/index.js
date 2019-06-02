@@ -3,7 +3,7 @@ import ReactDOM from 'react-dom';
 import './index.css';
 import * as serviceWorker from './serviceWorker';
 import DevTools from 'mobx-react-devtools';
-import { observable, configure, computed, action, decorate } from 'mobx';
+import { observable, configure, computed, action, decorate, runInAction } from 'mobx';
 import { observer } from 'mobx-react';
 
 configure({ enforceActions: 'observed' });
@@ -141,6 +141,49 @@ class App extends React.Component {
 
 ReactDOM.render(<App store={Store} />
     , document.getElementById('developers'));
+// #endregion
+
+// #region User
+class UserStore {
+    user: null;
+
+    getUser() {
+        const userUrl = 'https://randomuser.me/api/';
+        fetch (userUrl)
+            .then(result => result.json())
+            .then(userContent => {
+                if (userContent.results) {
+                    runInAction(() => {
+                        this.user = userContent.results[0];
+                    });
+                }
+            });
+    }
+};
+
+decorate(UserStore, {
+    user: observable,
+    getUser: action.bound
+});
+
+const userAppStore = new UserStore();
+
+@observer class UserApp extends React.Component {
+    render() {
+        const { store } = this.props;
+
+        return (
+            <div>
+                <DevTools />
+                <button onClick={store.getUser}>Get user</button>
+                <h1>{store.user ? store.user.login.username : 'Default name'}</h1>
+            </div>
+        );
+    }
+}
+
+ReactDOM.render(<UserApp store={userAppStore} />
+    , document.getElementById('user'));
 // #endregion
 
 // #region nickName
